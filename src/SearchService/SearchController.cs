@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Entities;
 using SearchService.Models;
+using SearchService.RequestHelpers;
 
 namespace SearchService
 {
@@ -14,21 +11,49 @@ namespace SearchService
     {
 
         [HttpGet]
-        public async Task<ActionResult<List<Item>>> searchItems(string searchTerm, int pageNumber = 1, int pageSize = 4)
+        public async Task<ActionResult<List<Item>>> searchItems([FromQuery] SearchParams searchParams)
         {
 
-            var query = DB.PagedSearch<Item>();
-            query.Sort(x => x.Ascending(a => a.Make));
+            var query = DB.PagedSearch<Item, Item>();
 
-            if (!string.IsNullOrEmpty(searchTerm))
+
+            if (!string.IsNullOrEmpty(searchParams.SearchTerm))
             {
                 // Each search result item will get a score for how much it is closest to the search term
-                query.Match(Search.Full, searchTerm).SortByTextScore();
+                query.Match(Search.Full, searchParams.SearchTerm).SortByTextScore();
+            }
+
+            // Sort ///////////////////////////
+            query = searchParams.OrderBy switch
+            {
+                "make" => query.Sort(x => x.Ascending(a => a.Make)),
+                "new" => query.Sort(x => x.Descending(a => a.CreatedAt)),
+                _ => query.Sort(x => x.Ascending(a => a.AuctionEndsAt)),
+            };
+
+            // Filter ///////////////////////////
+            query = searchParams.FilterBy switch
+            {
+                "finished" => query.Match(x => x.AuctionEndsAt < DateTime.UtcNow),
+                "endingSoon" => query.Match(x => x.AuctionEndsAt < DateTime.UtcNow.AddHours(6) && x.AuctionEndsAt > DateTime.UtcNow),
+                _ => query.Match(x => x.AuctionEndsAt > DateTime.UtcNow)
+            };
+
+            // Find auctions by seller
+            if (!string.IsNullOrEmpty(searchParams.Seller))
+            {
+                query.Match(x => x.Seller == searchParams.Seller);
             }
 
 
-            query.PageNumber(pageNumber);
-            query.PageSize(pageSize);
+            // Find auctions by winner
+            if (!string.IsNullOrEmpty(searchParams.Winner))
+            {
+                query.Match(x => x.Winner == searchParams.Winner);
+            }
+
+            query.PageNumber(searchParams.PageNumber);
+            query.PageSize(searchParams.PageSize);
 
             var result = await query.ExecuteAsync();
 
