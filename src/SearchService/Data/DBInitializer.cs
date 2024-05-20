@@ -2,6 +2,7 @@ using System.Text.Json;
 using MongoDB.Driver;
 using MongoDB.Entities;
 using SearchService.Models;
+using SearchService.Services;
 
 namespace SearchService.Data
 {
@@ -24,20 +25,15 @@ namespace SearchService.Data
             // Check how many item are in the mongo database
             var count = await DB.CountAsync<Item>();
 
-            if (count == 0)
-            {
+            using var scope = app.Services.CreateScope();
 
-                Console.WriteLine("No data in the database - attempting to seed the database 🤓");
-                var itemData = await File.ReadAllTextAsync("Data/auctions.json");
+            var httpClient = scope.ServiceProvider.GetRequiredService<AuctionServiceHttpClient>();
 
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var items = await httpClient.GetItemsForSearchDb();
 
-                // Convert the list of items inside the JSON file into an array of C# Items
-                var items = JsonSerializer.Deserialize<List<Item>>(itemData, options);
+            Console.WriteLine("Items from Auction Service: " + items.Count);
 
-                await DB.SaveAsync(items);
-
-            }
+            if (items.Count > 0) await DB.SaveAsync(items);
         }
 
     }
