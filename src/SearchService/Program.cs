@@ -1,3 +1,4 @@
+using MassTransit;
 using Polly;
 using Polly.Extensions.Http;
 using SearchService.Data;
@@ -5,10 +6,21 @@ using SearchService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container.//////////////
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient<AuctionServiceHttpClient>().AddPolicyHandler(GetRetryPolicy());
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddMassTransit(x =>
+{
+    // Rabbit will connect to localhost by default
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.ConfigureEndpoints(context);
+    });
+});
+///////////////////////////////////////////////
 
 
 var app = builder.Build();
