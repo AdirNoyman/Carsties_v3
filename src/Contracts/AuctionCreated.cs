@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Contracts
 {
-    public class AuctionCreatedContract
+    public class AuctionCreated
     {
         public Guid Id { get; set; }
         public int ReservePrice { get; set; }
