@@ -10,7 +10,7 @@ namespace SearchService.RequestHelpers
 {
     public class MappingProfiles : Profile
     {
-        protected MappingProfiles()
+        public MappingProfiles()
         {
             CreateMap<AuctionCreated, Item>();
 

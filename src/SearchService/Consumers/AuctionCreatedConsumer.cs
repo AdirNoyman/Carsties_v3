@@ -18,7 +18,7 @@ namespace SearchService.Consumers
         public async Task Consume(ConsumeContext<AuctionCreated> context)
         {
             var message = context.Message;
-            var item = _mapper.Map<Item>(message);
+            var item = _mapper.Map<Item>(context.Message);
             Console.WriteLine($"Auction created: {message.Id}");
             await item.SaveAsync();
         }
