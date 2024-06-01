@@ -22,6 +22,14 @@ builder.Services.AddMassTransit(x =>
     // Rabbit will connect to localhost by default
     x.UsingRabbitMq((context, cfg) =>
     {
+        cfg.ReceiveEndpoint("search-service-auction-created", e =>
+        {
+            // Configure retry policy for Auction created consumer
+            e.UseMessageRetry(r => r.Interval(5, 5));
+
+            e.ConfigureConsumer<AuctionCreatedConsumer>(context);
+        });
+
         cfg.ConfigureEndpoints(context);
     });
 });
