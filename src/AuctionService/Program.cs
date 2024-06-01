@@ -14,6 +14,17 @@ builder.Services.AddDbContext<AuctionDbContext>(options =>
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddMassTransit(x =>
 {
+
+    // Msstransit Outbox -> In case RabbitMQ is not running, an event that was not consummed by RabbitMQ will be inserted into this outbox and soon as RabbitMQ is back on the event in the outbox will be consummed by RabbitMQ
+    x.AddEntityFrameworkOutbox<AuctionDbContext>(options =>
+    {
+        // When RabbitMq is back up, this will query the outbox every 10 seconds to look for events that were not consumed by RabbitMQ
+        options.QueryDelay = TimeSpan.FromSeconds(10);
+        options.UsePostgres();
+        options.UseBusOutbox();
+
+    });
+
     // Rabbit will connect to localhost by default
     x.UsingRabbitMq((context, cfg) =>
     {
