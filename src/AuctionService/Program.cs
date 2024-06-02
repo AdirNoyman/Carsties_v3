@@ -1,3 +1,4 @@
+using AuctionService.Consumers;
 using AuctionService.Data;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,10 @@ builder.Services.AddMassTransit(x =>
         options.UseBusOutbox();
 
     });
+
+    x.AddConsumer<AuctionCreatedFaultConsumer>();
+
+    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auction-service", false));
 
     // Rabbit will connect to localhost by default
     x.UsingRabbitMq((context, cfg) =>

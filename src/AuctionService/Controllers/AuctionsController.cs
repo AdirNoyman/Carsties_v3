@@ -96,6 +96,10 @@ namespace AuctionService.Controllers
             auction.Item.Color = updateAuctionDTO.Color ?? auction.Item.Color;
             auction.Item.Mileage = updateAuctionDTO.Mileage ?? auction.Item.Mileage;
 
+
+            // Publish the new auction to the message broker (RabbitMQ)
+            await _publishEndpoint.Publish(_mapper.Map<AuctionUpdated>(auction));
+
             var result = await _context.SaveChangesAsync() > 0;
 
             if (result) return Ok();

@@ -19,7 +19,11 @@ namespace SearchService.Consumers
         {
             var message = context.Message;
             var item = _mapper.Map<Item>(context.Message);
-            Console.WriteLine($"Auction created: {message.Id}");
+            Console.WriteLine($"Consuming auction created: {message.Id}");
+
+            // Example of an catching an error just for learning purposes
+            if (item.Model == "Reno") throw new ArgumentException("Reno is not allowed");
+
             await item.SaveAsync();
         }
     }
