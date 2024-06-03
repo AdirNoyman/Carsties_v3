@@ -65,9 +65,8 @@ namespace AuctionService.Controllers
 
             _context.Auctions.Add(auction);
 
-            var newAuction = _mapper.Map<AuctionDTO>(auction);
-
             // Publish the new auction to the message broker (RabbitMQ)
+            var newAuction = _mapper.Map<AuctionDTO>(auction);
             await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
 
             // If more than 0 changes where made in the database, the auction was created successfully. If the publish to the OutBox failed, The create Auction will not be saved to the database till a sucssesful publish to the outbox is made (even while the RabbitMQ server is still down)
@@ -118,6 +117,8 @@ namespace AuctionService.Controllers
             // TODO: check if seller == username
 
             _context.Auctions.Remove(auction);
+
+            await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
 
             var result = await _context.SaveChangesAsync() > 0;
 
